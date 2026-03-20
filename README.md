@@ -1,4 +1,4 @@
-# voice-ai-assistant
+# voice-ai-assistant 
 
 一个基于百度千帆大模型、百度语音识别（ASR）/语音合成（TTS）API 开发的轻量级语音交互 AI 助手，支持实时语音提问、智能回答、语音合成输出，可查询实时天气、资讯等联网信息，内置可视化操作界面。
 
@@ -29,6 +29,22 @@ pip install -r requirements.txt
 ```
 
 ### 3. 配置 API 密钥
+创建一个`.env`文件
+示例如下：
+`.env`
+# 百度语音识别/合成 API
+BAIDU_ASR_API_KEY=YOUR_BAIDU_ASR_API_KEY
+BAIDU_ASR_SECRET_KEY=YOUR_BAIDU_ASR_SECRET_KEY
+# 百度千帆平台 API Key
+QIANFAN_API_KEY=YOUR_QIANFAN_API_KEY
+# 临时音频文件路径
+TEMP_AUDIO_PATH=./temp_audio.wav
+
+# 默认语言和TTS引擎
+DEFAULT_LANGUAGE=普通话
+DEFAULT_TTS_ENGINE=offline
+DEFAULT_CHAT_MODEL=YOUR_DEFAULT_CHAT_MODEL
+
 在 `.env` 文件中填写你的百度 API 密钥，包括 ASR、TTS 和千帆大模型的密钥。
 
 ### 4. 运行程序
