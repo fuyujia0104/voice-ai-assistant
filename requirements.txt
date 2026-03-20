@@ -1,0 +1,8 @@
+requests
+pyaudio
+pyttsx3
+python-dotenv
+customtkinter
+Pillow
+pygame
+openai
