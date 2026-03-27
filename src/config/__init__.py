@@ -10,7 +10,10 @@ from .settings import (
     QIANFAN_API_KEY,
     DEFAULT_CHAT_MODEL,
     TEMP_AUDIO_PATH,
-    WINDOW_SIZE
+    WINDOW_SIZE,
+    QWEN_MODEL_PATH,
+    QWEN_DEVICE,
+    DEFAULT_CHAT_ENGINE
 )
 
 __all__ = [
@@ -19,5 +22,8 @@ __all__ = [
     "QIANFAN_API_KEY",
     "DEFAULT_CHAT_MODEL",
     "TEMP_AUDIO_PATH",
-    "WINDOW_SIZE"
+    "WINDOW_SIZE",
+    "QWEN_MODEL_PATH",
+    "QWEN_DEVICE",
+    "DEFAULT_CHAT_ENGINE"
 ]
