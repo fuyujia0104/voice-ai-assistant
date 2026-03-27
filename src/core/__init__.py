@@ -7,5 +7,7 @@
 from .asr import BaiduASR
 from .tts import TTS
 from .chat import QianFanChat
+from .qwen_chat import ChatGLMChat
+from .chat_manager import ChatManager
 
-__all__ = ["BaiduASR", "TTS", "QianFanChat"]
+__all__ = ["BaiduASR", "TTS", "QianFanChat", "ChatGLMChat", "ChatManager"]
