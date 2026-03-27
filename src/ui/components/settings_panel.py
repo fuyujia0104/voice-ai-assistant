@@ -9,6 +9,7 @@ class AppSettings:
     """应用配置数据类：统一管理所有可配置项"""
     language: str = "普通话"
     enable_search: bool = True  # 默认启用联网搜索，以获取实时信息（如天气）
+    chat_engine: str = "api"
     tts_engine: str = "offline"
     record_duration: int = 5
     tts_voice: str = "female"
@@ -127,6 +128,19 @@ class SettingsPanel(ctk.CTkFrame):
             text="🤖 AI对话",
             font=ctk.CTkFont(size=14, weight="bold")
         ).pack(anchor="w", padx=5, pady=(0, 8))
+
+        # 添加对话引擎选择
+        engine_label = ctk.CTkLabel(chat_frame, text="对话引擎：")
+        engine_label.pack(anchor="w", padx=10)
+
+        self.chat_engine_var = ctk.StringVar(value=self.settings.chat_engine)
+        chat_engine_menu = ctk.CTkOptionMenu(
+            chat_frame,
+            values=["api", "local"],
+            variable=self.chat_engine_var,
+            command=lambda v: self._on_setting_update("chat_engine", v)
+        )
+        chat_engine_menu.pack(fill="x", padx=10, pady=5)
 
         # 联网搜索开关
         self.search_var = ctk.BooleanVar(value=self.settings.enable_search)
@@ -249,6 +263,7 @@ class SettingsPanel(ctk.CTkFrame):
         default = AppSettings()
         self.lang_var.set(default.language)
         self.search_var.set(default.enable_search)
+        self.chat_engine_var.set(default.chat_engine)
         self.tts_engine_var.set(default.tts_engine)
         self.duration_var.set(default.record_duration)
         self.tts_voice_var.set(default.tts_voice)
@@ -262,6 +277,7 @@ class SettingsPanel(ctk.CTkFrame):
         settings_dict = {
             "language": self.settings.language,
             "enable_search": self.settings.enable_search,
+            "chat_engine": self.settings.chat_engine,
             "tts_engine": self.settings.tts_engine,
             "record_duration": self.settings.record_duration,
             "tts_voice": self.settings.tts_voice,
