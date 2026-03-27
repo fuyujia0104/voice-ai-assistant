@@ -9,7 +9,7 @@ from src.config.settings import (
 )
 from src.core.asr import BaiduASR
 from src.core.tts import TTS
-from src.core.chat import QianFanChat
+from src.core.chat_manager import ChatManager
 from src.utils.audio_utils import record_audio, stop_recording, reset_recording_state
 from .components.chat_bubble import ChatBubble
 from .components.settings_panel import SettingsPanel, AppSettings
@@ -21,26 +21,53 @@ ctk.set_default_color_theme("blue")
 
 class VoiceAssistantApp(ctk.CTk):
     def __init__(self):
-        super().__init__()
-        self.title(APP_TITLE)
-        self.geometry(WINDOW_SIZE)
-        min_w, min_h = MIN_WINDOW_SIZE.split("x")
-        self.minsize(int(min_w), int(min_h))
+        try:
+            super().__init__()
+            self.title(APP_TITLE)
+            self.geometry(WINDOW_SIZE)
+            min_w, min_h = MIN_WINDOW_SIZE.split("x")
+            self.minsize(int(min_w), int(min_h))
 
-        # 初始化核心模块
-        self.asr = BaiduASR()
-        self.tts = TTS(engine=DEFAULT_TTS_ENGINE)
-        self.chat = QianFanChat()
+            # 初始化核心模块
+            print("正在初始化ASR...")
+            self.asr = BaiduASR()
+            print("ASR初始化成功")
 
-        # 状态变量
-        self.current_language = DEFAULT_LANGUAGE
-        self.enable_search = True  # 默认启用联网搜索，以获取实时信息（如天气）
-        self.tts_engine = DEFAULT_TTS_ENGINE
-        self.is_recording = False  # 录音状态标记
-        self.record_duration = RECORD_DURATION
+            print("正在初始化TTS...")
+            self.tts = TTS(engine=DEFAULT_TTS_ENGINE)
+            print("TTS初始化成功")
 
-        # 构建UI
-        self._create_layout()
+            print("正在初始化ChatManager...")
+            self.chat = ChatManager()
+            print("ChatManager初始化成功")
+
+            # 状态变量
+            self.current_language = DEFAULT_LANGUAGE
+            self.enable_search = True  # 默认启用联网搜索，以获取实时信息（如天气）
+            self.tts_engine = DEFAULT_TTS_ENGINE
+            self.is_recording = False  # 录音状态标记
+            self.record_duration = RECORD_DURATION
+
+            # 构建UI
+            print("正在构建UI...")
+            self._create_layout()
+            print("UI构建完成")
+        except Exception as e:
+            import traceback
+            # 输出完整的错误堆栈信息到控制台
+            print("=" * 80)
+            print("初始化失败 - 错误类型:", type(e).__name__)
+            print("错误信息:", str(e))
+            print("=" * 80)
+            print("完整堆栈跟踪:")
+            traceback.print_exc()
+            print("=" * 80)
+
+            # 显示错误对话框
+            from tkinter import messagebox
+            error_msg = f"初始化失败：{str(e)}"
+            messagebox.showerror("初始化失败", error_msg)
+            raise
 
     def _create_layout(self):
         """分层构建UI（更易维护）"""
@@ -58,6 +85,7 @@ class VoiceAssistantApp(ctk.CTk):
         initial_settings = AppSettings(
             language=self.current_language,
             enable_search=self.enable_search,
+            chat_engine=self.chat.engine,
             tts_engine=self.tts_engine,
             record_duration=5  # 默认录音时长
         )
@@ -146,21 +174,36 @@ class VoiceAssistantApp(ctk.CTk):
 
     def send_message(self):
         """优化后的发送逻辑（空输入校验+UI反馈）"""
-        user_input = self.message_entry.get().strip()
-        if not user_input:
-            messagebox.showwarning("提示", "输入内容不能为空！")
-            return
+        try:
+            user_input = self.message_entry.get().strip()
+            if not user_input:
+                messagebox.showwarning("提示", "输入内容不能为空！")
+                return
 
-        # 清空输入框+显示用户消息
-        self.message_entry.delete(0, "end")
-        self.display_message("我", user_input, is_user=True)
+            # 清空输入框+显示用户消息
+            self.message_entry.delete(0, "end")
+            self.display_message("我", user_input, is_user=True)
 
-        # 子线程调用AI（避免UI卡顿）
-        threading.Thread(
-            target=self._get_ai_reply,
-            args=(user_input,),
-            daemon=True
-        ).start()
+            # 子线程调用AI（避免UI卡顿）
+            threading.Thread(
+                target=self._get_ai_reply,
+                args=(user_input,),
+                daemon=True
+            ).start()
+        except Exception as e:
+            import traceback
+            # 输出完整的错误堆栈信息到控制台
+            print("=" * 80)
+            print("发送消息失败 - 错误类型:", type(e).__name__)
+            print("错误信息:", str(e))
+            print("=" * 80)
+            print("完整堆栈跟踪:")
+            traceback.print_exc()
+            print("=" * 80)
+
+            error_msg = f"发送消息失败：{str(e)}"
+            self.display_message("系统错误", error_msg, is_user=False)
+            messagebox.showerror("错误", error_msg)
 
     def _get_ai_reply(self, user_input):
         """修复enable_search参数绑定"""
@@ -170,24 +213,49 @@ class VoiceAssistantApp(ctk.CTk):
             self.display_message("猫猫AI", reply, is_user=False)
             self.tts.speak(reply)
         except Exception as e:
+            import traceback
+            # 输出完整的错误堆栈信息到控制台
+            print("=" * 80)
+            print("AI回复失败 - 错误类型:", type(e).__name__)
+            print("错误信息:", str(e))
+            print("=" * 80)
+            print("完整堆栈跟踪:")
+            traceback.print_exc()
+            print("=" * 80)
+
             error_msg = f"AI回复失败：{str(e)}"
             self.display_message("系统错误", error_msg, is_user=False)
             messagebox.showerror("错误", error_msg)
 
     def toggle_recording(self):
         """切换录音状态：开始或停止录音"""
-        if not self.is_recording:
-            # 开始录音
-            self.is_recording = True
-            self.record_button.configure(text="⏹️ 停止录音", fg_color="#dc3545", hover_color="#c82333")
-            threading.Thread(
-                target=self._record_and_recognize,
-                daemon=True
-            ).start()
-        else:
-            # 停止录音
-            stop_recording()  # 停止录音线程
-            self.display_message("系统提示", "录音已手动停止", is_user=False)
+        try:
+            if not self.is_recording:
+                # 开始录音
+                self.is_recording = True
+                self.record_button.configure(text="⏹️ 停止录音", fg_color="#dc3545", hover_color="#c82333")
+                threading.Thread(
+                    target=self._record_and_recognize,
+                    daemon=True
+                ).start()
+            else:
+                # 停止录音
+                stop_recording()  # 停止录音线程
+                self.display_message("系统提示", "录音已手动停止", is_user=False)
+        except Exception as e:
+            import traceback
+            # 输出完整的错误堆栈信息到控制台
+            print("=" * 80)
+            print("录音切换失败 - 错误类型:", type(e).__name__)
+            print("错误信息:", str(e))
+            print("=" * 80)
+            print("完整堆栈跟踪:")
+            traceback.print_exc()
+            print("=" * 80)
+
+            error_msg = f"录音切换失败：{str(e)}"
+            self.display_message("系统错误", error_msg, is_user=False)
+            messagebox.showerror("错误", error_msg)
 
     def _record_and_recognize(self):
         """录音+识别逻辑（全量修复异常处理+资源释放）"""
@@ -247,6 +315,16 @@ class VoiceAssistantApp(ctk.CTk):
             self.display_message("系统错误", error_msg, is_user=False)
             messagebox.showerror("网络错误", error_msg)
         except Exception as e:
+            import traceback
+            # 输出完整的错误堆栈信息到控制台
+            print("=" * 80)
+            print("语音识别失败 - 错误类型:", type(e).__name__)
+            print("错误信息:", str(e))
+            print("=" * 80)
+            print("完整堆栈跟踪:")
+            traceback.print_exc()
+            print("=" * 80)
+
             # 通用异常兜底
             error_msg = f"语音识别失败：{str(e)}"
             self.display_message("系统错误", error_msg, is_user=False)
@@ -268,28 +346,60 @@ class VoiceAssistantApp(ctk.CTk):
 
     def _handle_setting_change(self, setting_name, value):
         """处理配置变更"""
-        if setting_name == "language":
-            self.current_language = value
-        elif setting_name == "enable_search":
-            self.enable_search = value
-        elif setting_name == "tts_engine":
-            self.tts_engine = value
-            self.tts = TTS(engine=value)
-        elif setting_name == "record_duration":
-            # 更新录音时长配置
-            self.record_duration = max(1, min(30, value))  # 限制1-30秒
-        elif setting_name == "tts_voice":
-            self.tts.set_voice(value)  # 需在TTS类中实现set_voice方法
-        elif setting_name == "tts_speed":
-            self.tts.set_speed(value)  # 需在TTS类中实现set_speed方法
+        try:
+            if setting_name == "language":
+                self.current_language = value
+            elif setting_name == "enable_search":
+                self.enable_search = value
+            elif setting_name == "chat_engine":
+                self.chat.switch_engine(value)
+            elif setting_name == "tts_engine":
+                self.tts_engine = value
+                self.tts = TTS(engine=value)
+            elif setting_name == "record_duration":
+                # 更新录音时长配置
+                self.record_duration = max(1, min(30, value))  # 限制1-30秒
+            elif setting_name == "tts_voice":
+                self.tts.set_voice(value)  # 需在TTS类中实现set_voice方法
+            elif setting_name == "tts_speed":
+                self.tts.set_speed(value)  # 需在TTS类中实现set_speed方法
 
-        # 提示用户配置已更新
-        self.display_message("系统提示", f"{setting_name} 已更新为：{value}", is_user=False)
+            # 提示用户配置已更新
+            self.display_message("系统提示", f"{setting_name} 已更新为：{value}", is_user=False)
+        except Exception as e:
+            import traceback
+            # 输出完整的错误堆栈信息到控制台
+            print("=" * 80)
+            print("配置变更失败 - 错误类型:", type(e).__name__)
+            print("错误信息:", str(e))
+            print("=" * 80)
+            print("完整堆栈跟踪:")
+            traceback.print_exc()
+            print("=" * 80)
+
+            error_msg = f"配置变更失败：{str(e)}"
+            self.display_message("系统错误", error_msg, is_user=False)
+            messagebox.showerror("错误", error_msg)
 
     def clear_history(self):
         """清空对话历史（含UI）"""
-        self.chat.clear_history()
-        # 清空聊天显示区
-        for widget in self.chat_display.winfo_children():
-            widget.destroy()
-        self.display_message("系统提示", "对话历史已清空", is_user=False)
+        try:
+            self.chat.clear_history()
+            # 清空聊天显示区
+            for widget in self.chat_display.winfo_children():
+                widget.destroy()
+            self.display_message("系统提示", "对话历史已清空", is_user=False)
+        except Exception as e:
+            import traceback
+            # 输出完整的错误堆栈信息到控制台
+            print("=" * 80)
+            print("清空历史失败 - 错误类型:", type(e).__name__)
+            print("错误信息:", str(e))
+            print("=" * 80)
+            print("完整堆栈跟踪:")
+            traceback.print_exc()
+            print("=" * 80)
+
+            error_msg = f"清空历史失败：{str(e)}"
+            self.display_message("系统错误", error_msg, is_user=False)
+            messagebox.showerror("错误", error_msg)
