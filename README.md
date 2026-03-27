@@ -1,12 +1,14 @@
-# voice-ai-assistant 
+# 语音识别AI助手 
 
-一个基于百度千帆大模型、百度语音识别（ASR）/语音合成（TTS）API 开发的轻量级语音交互 AI 助手，支持实时语音提问、智能回答、语音合成输出，可查询实时天气、资讯等联网信息，内置可视化操作界面。
+一个基于百度千帆大模型、Qwen本地模型、百度语音识别（ASR）/语音合成（TTS）API 开发的轻量级语音交互 AI 助手，支持实时语音提问、智能回答、语音合成输出，可查询实时天气、资讯等联网信息，内置可视化操作界面。
 
 ## 🌟 核心功能
 - **实时语音识别**：基于百度 ASR 实现高准确率的中文语音转文字，支持麦克风实时输入
-- **智能对话交互**：集成百度千帆大模型（ERNIE 3.5/4.0），支持联网搜索获取实时数据
+- **智能对话交互**：
+  - 在线模式：集成百度千帆大模型（ERNIE 3.5/4.0），支持联网搜索获取实时数据
+  - 本地模式：支持 Qwen 本地模型（Qwen-1_8B-Chat），无需网络即可进行智能对话
 - **多模式语音合成**：支持百度在线 TTS（高音质）和离线 TTS（无网络可用），可自定义语速/音色
-- **可视化操作界面**：基于 Pygame 开发的简洁交互界面，支持一键录音、停止、清空对话
+- **可视化操作界面**：基于 CustomTkinter 开发的简洁交互界面，支持一键录音、停止、清空对话
 - **实时联网查询**：天气、新闻等实时信息查询，告别静态训练数据
 
 ## 📋 环境要求
@@ -45,7 +47,12 @@ DEFAULT_LANGUAGE=普通话
 DEFAULT_TTS_ENGINE=offline
 DEFAULT_CHAT_MODEL=YOUR_DEFAULT_CHAT_MODEL
 
-在 `.env` 文件中填写你的百度 API 密钥，包括 ASR、TTS 和千帆大模型的密钥。
+# Qwen本地模型配置（可选）
+QWEN_MODEL_PATH=YOUR_QWEN_MODEL_PATH  # 例如：C:\Users\YourName\.cache\modelscope\hub\models\qwen\Qwen-1_8B-Chat
+QWEN_DEVICE=auto  # auto/cuda/cpu
+DEFAULT_CHAT_ENGINE=api  # api(千帆API)/local(Qwen)
+
+在 `.env` 文件中填写你的百度 API 密钥，包括 ASR、TTS 和千帆大模型的密钥。如果需要使用本地 Qwen 模型，请配置 QWEN_MODEL_PATH。
 
 ### 4. 运行程序
 ```bash
@@ -66,9 +73,12 @@ Q1: 运行报错 401 Unauthorized
 Q2: 天气查询返回旧数据（如 2024 年）
 原因：联网搜索功能未启用、模型不支持联网
 解决：
-1.确保 src/core/chat.py 中启用 enable_plugin: true
+1.确保使用在线模式（千帆API）
 2.将 DEFAULT_CHAT_MODEL 改为 ernie-3.5-turbo/ernie-4.0-turbo（支持联网）
-3.系统提示词中强制要求「基于实时数据回答」
+3.在设置中启用"实时联网搜索"开关
+4.系统提示词中强制要求「基于实时数据回答」
+
+注意：本地 Qwen 模型不支持联网搜索功能，如需查询实时信息请切换到在线模式。
 
 Q3: 语音合成无声音 / 卡顿
 原因：Pygame 音频初始化失败、TTS 参数错误、音频设备占用
@@ -83,6 +93,8 @@ Q4: Pygame 报 comtypes 警告
 
 ### 7.🛠️ 技术栈
 语音处理：百度 ASR/TTS API、PyAudio（麦克风采集）
-AI 对话：百度千帆大模型 SDK、Requests（API 调用）
-界面开发：Pygame（可视化交互）
+AI 对话：
+- 在线：百度千帆大模型 SDK、Requests（API 调用）
+- 本地：Transformers、PyTorch（Qwen 模型推理）
+界面开发：CustomTkinter（可视化交互）
 配置管理：python-dotenv（环境变量）
